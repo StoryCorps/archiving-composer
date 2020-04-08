@@ -46,12 +46,10 @@ result.on("close", function () {
   var script = JSON.parse(
     fs.readFileSync(path.join(temp_dir, json_file)).toString()
   );
-  console.log(script);
+//   console.log(script);
 
   var archiveId = script.id;
-
   var archive_path = temp_dir;
-
   var format = program.format;
 
   var startTime = 10000000000000;
@@ -77,7 +75,7 @@ result.on("close", function () {
     return a.startTimeOffset - b.startTimeOffset;
   });
 
-  console.log("duration=", endTime - startTime);
+//   console.log("duration=", endTime - startTime);
 
   var inputs = "";
 
@@ -85,18 +83,18 @@ result.on("close", function () {
   script.files.forEach((oneFile) => {
 
     let fullPath = `${archive_path}/${oneFile.filename}`;
-    cmd = `ffmpeg -i ${fullPath} -af "adelay=${oneFile.startTimeOffset}|${oneFile.startTimeOffset}" ${fullPath}.wav`;
+    cmd = `ffmpeg -y -loglevel quiet -i ${fullPath} -af "adelay=${oneFile.startTimeOffset}|${oneFile.startTimeOffset}" ${fullPath}.wav`;
     child = exec(cmd, function (error, stdout, stderr) {
       if (error !== null) {
         console.log("exec error: " + error);
       }
     });
 
-    inputs += ` -itsoffset ${oneFile.startTimeOffset} -i ${oneFile.filename}.wav `;
+    inputs += ` -itsoffset ${oneFile.startTimeOffset} -i ${archive_path}/${oneFile.filename}.wav `;
   });
 
   // now mix it down into one wav file.
-  cmd = `ffmpeg ${inputs} -filter_complex amix=inputs=${script.files.length}:duration=longest:dropout_transition=3 testoutput.wav`;
+  cmd = `ffmpeg -y -loglevel quiet ${inputs} -filter_complex amix=inputs=${script.files.length}:duration=longest:dropout_transition=3 ${archive_path}/mixed-${archiveId}.wav`;
 
   child = exec(cmd, function (error, stdout, stderr) {
     if (error !== null) {
@@ -104,6 +102,7 @@ result.on("close", function () {
     }
   });
 
+  console.log(`Done Processing! Files can be found in ${archive_path}.`)
   //   // remove temp files
   //   fs.unlinkSync(archiveId + "-list.txt");
   //   chunks.forEach(function(chunk) {

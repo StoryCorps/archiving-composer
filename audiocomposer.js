@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
 var fs = require("fs"),
-  util = require("util"),
   exec = require("child_process").execSync,
   fs = require("fs"),
   program = require("commander"),
   path = require("path"),
-  unzip = require("unzip"),
+  unzip = require("unzip-stream"),
   child;
 
 program
@@ -19,15 +18,15 @@ program
 if (!program.input) {
   program.help();
 }
+console.log("Generating Audio from " + program.input);
 
 var zip_file = program.input;
 var dirname = path.dirname(zip_file);
 var basename = path.basename(zip_file, ".zip");
-var temp_dir = path.join(dirname, basename);
+var temp_dir = path.join(dirname, basename + Date.now());
 
 // Unzip the archive
-var input = fs.createReadStream(zip_file);
-var result = input.pipe(unzip.Extract({ path: temp_dir }));
+var result = fs.createReadStream(zip_file).pipe(unzip.Extract({ path: temp_dir }));
 
 result.on("close", function () {
   var files = fs.readdirSync(temp_dir);
@@ -46,7 +45,6 @@ result.on("close", function () {
   var script = JSON.parse(
     fs.readFileSync(path.join(temp_dir, json_file)).toString()
   );
-//   console.log(script);
 
   var archiveId = script.id;
   var archive_path = temp_dir;
@@ -54,6 +52,7 @@ result.on("close", function () {
 
   var startTime = 10000000000000;
   var endTime = 0;
+
   // find start end end time for the whole playback
   script.files.forEach(function (e) {
     if (e.startTimeOffset < startTime) {
@@ -75,7 +74,7 @@ result.on("close", function () {
     return a.startTimeOffset - b.startTimeOffset;
   });
 
-//   console.log("duration=", endTime - startTime);
+  console.log("duration=", endTime - startTime);
 
   var inputs = "";
 
@@ -83,13 +82,14 @@ result.on("close", function () {
   script.files.forEach((oneFile) => {
 
     let fullPath = `${archive_path}/${oneFile.filename}`;
-    cmd = `ffmpeg -y -loglevel quiet -i ${fullPath} -af "adelay=${oneFile.startTimeOffset}|${oneFile.startTimeOffset}" ${fullPath}.wav`;
+    cmd = `ffmpeg -y -loglevel warning -i ${fullPath} -af "adelay=${oneFile.startTimeOffset}|${oneFile.startTimeOffset}" ${fullPath}.wav`;
     child = exec(cmd, function (error, stdout, stderr) {
       if (error !== null) {
         console.log("exec error: " + error);
       }
     });
 
+    // add to our list of inputs for the big merge
     inputs += ` -itsoffset ${oneFile.startTimeOffset} -i ${archive_path}/${oneFile.filename}.wav `;
   });
 
@@ -102,7 +102,7 @@ result.on("close", function () {
     }
   });
 
-  console.log(`Done Processing! Files can be found in ${archive_path}.`)
+  console.log(`\n\nDone Processing! Files can be found in ${archive_path}\n`)
   //   // remove temp files
   //   fs.unlinkSync(archiveId + "-list.txt");
   //   chunks.forEach(function(chunk) {

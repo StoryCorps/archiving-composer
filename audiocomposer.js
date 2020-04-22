@@ -74,6 +74,7 @@ result.on("close", function () {
     return a.startTimeOffset - b.startTimeOffset;
   });
 
+  console.log("script=",script);
   console.log("duration=", endTime - startTime);
 
   var inputs = "";
@@ -81,20 +82,29 @@ result.on("close", function () {
   // Loop over the files to Create a WAV file for each path that has the same offset at the start.
   script.files.forEach((oneFile) => {
 
+    // generate a single wavefile with a delay at the front of it.
     let fullPath = `${archive_path}/${oneFile.filename}`;
-    cmd = `ffmpeg -y -loglevel warning -i ${fullPath} -af "adelay=${oneFile.startTimeOffset}|${oneFile.startTimeOffset}" ${fullPath}.wav`;
+    cmd = `ffmpeg -y -loglevel warning -acodec libopus -i ${fullPath} -af "adelay=${oneFile.startTimeOffset}|${oneFile.startTimeOffset}" ${fullPath}.wav`;
+
+    console.log("individual command:\n", cmd);
+
     child = exec(cmd, function (error, stdout, stderr) {
       if (error !== null) {
         console.log("exec error: " + error);
       }
     });
 
+
     // add to our list of inputs for the big merge
-    inputs += ` -itsoffset ${oneFile.startTimeOffset} -i ${archive_path}/${oneFile.filename}.wav `;
+    inputs += ` -itsoffset ${oneFile.startTimeOffset} -acodec libopus -i ${archive_path}/${oneFile.filename} `;
+    // inputs += ` -itsoffset ${oneFile.startTimeOffset} -i ${archive_path}/${oneFile.filename}.wav `;
+
   });
 
   // now mix it down into one wav file.
-  cmd = `ffmpeg -y -loglevel quiet ${inputs} -filter_complex amix=inputs=${script.files.length}:duration=longest:dropout_transition=3 ${archive_path}/mixed-${archiveId}.wav`;
+  cmd = `ffmpeg -y -loglevel warning ${inputs} -filter_complex amix=inputs=${script.files.length}:duration=longest:dropout_transition=3 ${archive_path}/mixed-${archiveId}.wav`;
+
+  console.log("command:\n", cmd);
 
   child = exec(cmd, function (error, stdout, stderr) {
     if (error !== null) {

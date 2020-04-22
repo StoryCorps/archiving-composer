@@ -81,10 +81,13 @@ result.on("close", function () {
 
   // Loop over the files to Create a WAV file for each path that has the same offset at the start.
   script.files.forEach((oneFile) => {
+    
+    let speaker_name = JSON.parse(oneFile.connectionData).userName.replace(/[^a-z0-9]/gi, '_');
 
     // generate a single wavefile with a delay at the front of it.
-    let fullPath = `${archive_path}/${oneFile.filename}`;
-    cmd = `ffmpeg -y -loglevel warning -acodec libopus -i ${fullPath} -af "adelay=${oneFile.startTimeOffset}|${oneFile.startTimeOffset}" ${fullPath}.wav`;
+    let inputFile = `${archive_path}/${oneFile.filename}`;
+    let outputFile = `${archive_path}/${speaker_name}-${oneFile.filename}.wav`;
+    cmd = `ffmpeg -y -loglevel warning -acodec libopus -i ${inputFile} -af "adelay=${oneFile.startTimeOffset}|${oneFile.startTimeOffset}" ${outputFile}`;
 
     console.log("individual command:\n", cmd);
 
@@ -94,10 +97,9 @@ result.on("close", function () {
       }
     });
 
-
     // add to our list of inputs for the big merge
-    inputs += ` -itsoffset ${oneFile.startTimeOffset} -acodec libopus -i ${archive_path}/${oneFile.filename} `;
-    // inputs += ` -itsoffset ${oneFile.startTimeOffset} -i ${archive_path}/${oneFile.filename}.wav `;
+    inputs += ` -itsoffset ${oneFile.startTimeOffset} -acodec libopus -i ${inputFile} `;
+    // inputs += ` -itsoffset ${oneFile.startTimeOffset} -i ${inputFile}.wav `;
 
   });
 

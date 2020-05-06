@@ -1,0 +1,22 @@
+{
+    "id": "03d40f4f-c745-40b9-9035-25c873605609",
+    "status": "uploaded",
+    "name": "tlo123456::Courtney Gilbert (facilitator)::2020-5-5::20:06:23",
+    "reason": "user initiated",
+    "sessionId": "1_MX40NjU2NTU1Mn5-MTU4NzA3Mjk1OTExOH5MQmNndHJpNnMydUZFNzdkK2VTbkswbEt-fg",
+    "projectId": 46565552,
+    "createdAt": 1587072963000,
+    "size": 299595,
+    "duration": 3,
+    "outputMode": "individual",
+    "hasAudio": true,
+    "hasVideo": true,
+    "certificate": "",
+    "sha256sum": "rgfW0TO53DFJSqtlAfxPH9iG6edYFwBMaul4cdPhAQY=",
+    "password": "",
+    "updatedAt": 1587072970331,
+    "width": -1,
+    "height": -1,
+    "partnerId": 46565552,
+    "event": "archive"
+  }

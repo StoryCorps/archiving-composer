@@ -167,4 +167,4 @@ def lambda_handler(event, context):
         print(e)
         raise e
 
-lambda_handler(event, context)
+# lambda_handler(event, context) #for local testing

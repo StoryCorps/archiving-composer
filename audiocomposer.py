@@ -8,15 +8,16 @@ import os
 import json
 import subprocess
 import re
+import shutil
 
-event = ""   #for local testing
-context = "" #for local testing
+# event = ""   #for local testing
+# context = "" #for local testing
 
 
 def lambda_handler(event, context):
     tmp = '/tmp/'
-    event = json.load(open('event.json')) #for testing local
-    tmp = './tmp/' # for local testing
+    # event = json.load(open('event.json')) #for testing local
+    # tmp = './tmp/' # for local testing
     body = json.loads(event["body"])
     print("event:", event)
     print("body:", body)
@@ -39,6 +40,9 @@ def lambda_handler(event, context):
     unzippedLocation = account + "/" + interview
     temp_dir = tmp + interview
     interviewId = interviewId.lower()
+    
+    webmURLDict = {}
+    
     try:
         key = zippedKey
         print("downloading and unzipping", bucket, key)
@@ -62,9 +66,10 @@ def lambda_handler(event, context):
         for obj in objs:
             if(obj._key[-5:] == ".json"):
                 s3_client.download_file(bucket, obj.key, tmp + interview + "/interview.json")
-            elif(obj._key[-5:] == ".webm" == ".webm"):
+            elif(obj._key[-5:] == ".webm"):
                 # webmLocalKey = tmp + re.split('/',obj.key)[1] + re.split('/',obj.key)[]
-                s3_client.download_file(bucket, obj.key, tmp + obj.key[-78:])
+                # s3_client.download_file(bucket, obj.key, tmp + obj.key[-78:])
+                webmURLDict[obj.key[-41:]] = "\"" + s3_client.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': obj._key}, ExpiresIn=1000000) + "\""
             pass
         
         # open the JSON file 
@@ -92,7 +97,7 @@ def lambda_handler(event, context):
         streamCount = 1
         for file in data['files']: 
             # generate a single wavefile with a delay at the front of it.
-            inputFile = temp_dir + "/" + file["filename"]
+            inputFile = webmURLDict[file["filename"]]
             fileName = str(interviewId) + "_p" + str(streamCount) + ".wav"
             outputFile = temp_dir + "/" + fileName
 
@@ -101,6 +106,7 @@ def lambda_handler(event, context):
             while len(objs) > 0 and objs[0].key == key:
                 streamCount = streamCount + 1
                 fileName = str(interviewId) + "_p" + str(streamCount) + ".wav"
+                outputFile = temp_dir + "/" + fileName
                 key = 'Processed/' + interviewId + "/" + fileName
                 objs = list(my_bucket.objects.filter(Prefix=key))
 
@@ -111,6 +117,11 @@ def lambda_handler(event, context):
             
             print("outputFile: ", outputFile)
             s3_client.upload_file(outputFile, bucket, 'Processed/' + interviewId + "/" + fileName)
+            
+            # delete the individual stream from tmp after upload
+            if os.path.exists(outputFile):
+                os.remove(outputFile)
+                print(interviewId, "Removed the file %s" % outputFile) 
             inputs += " -itsoffset " + str(file["startTimeOffset"]) + " -acodec libopus -i " + inputFile
             streamCount = streamCount + 1
 
@@ -156,6 +167,12 @@ def lambda_handler(event, context):
                 s3_client.upload_file(temp_dir + mixedFileName, bucket, 'Processed/' + interviewId + "/" + interviewId + ".wav")
                 print(bucket, 'Processed/' + interviewId + "/" + interviewId + ".wav")
 
+        # delete the tmp folder
+        if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+                print(interviewId, "Removed the folder %s" % temp_dir) 
+
+        
         #delete the non zip files
         objs = my_bucket.objects.filter(Prefix=unzippedLocation)
         for obj in objs:
@@ -167,4 +184,4 @@ def lambda_handler(event, context):
         print(e)
         raise e
 
-lambda_handler(event, context)
+# lambda_handler(event, context) #for local testing

@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "commander": "^2.8.1",
-    "unzip-stream": "^0.3.0"
-  }
-}

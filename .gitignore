@@ -2,3 +2,4 @@
 *.webm
 *.zip
 node_modules/
+files/

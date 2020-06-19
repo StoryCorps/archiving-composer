@@ -21,13 +21,13 @@ def lambda_handler(event, context):
     body = json.loads(event["body"])
     print("event:", event)
     print("body:", body)
-
+    
     bucket = "storycorps-signature-remote"
     account = str(body["partnerId"])
     interview = str(body["id"])
     interviewId = str(re.split('::',body["name"])[0])
     status = body["status"]
-
+    
     if (status != "uploaded"):
         print(interviewId, "not an upload event.", status )
         return (interviewId, "not not an upload event", status)
@@ -40,9 +40,9 @@ def lambda_handler(event, context):
     unzippedLocation = account + "/" + interview
     temp_dir = tmp + interview
     interviewId = interviewId.lower()
-
+    
     webmURLDict = {}
-
+    
     try:
         key = zippedKey
         print("downloading and unzipping", bucket, key)
@@ -71,23 +71,23 @@ def lambda_handler(event, context):
                 # s3_client.download_file(bucket, obj.key, tmp + obj.key[-78:])
                 webmURLDict[obj.key[-41:]] = "\"" + s3_client.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': obj._key}, ExpiresIn=1000000) + "\""
             pass
-
-        # open the JSON file
-        f = open(tmp + interview + '/interview.json',)
-
-        # returns JSON object as a dictionary
+        
+        # open the JSON file 
+        f = open(tmp + interview + '/interview.json',) 
+        
+        # returns JSON object as a dictionary 
         data = json.load(f)
         startTime = 10000000000000;
         endTime = 0;
-
+        
         # find start end end time for the whole playback
-        for file in data['files']:
+        for file in data['files']: 
             if(file["startTimeOffset"] < startTime):
                 startTime = file["startTimeOffset"]
             if(file["stopTimeOffset"] > endTime):
                 endTime = file["stopTimeOffset"]
 
-        for file in data['files']:
+        for file in data['files']: 
             file["startTimeOffset"] -= startTime
             file["stopTimeOffset"] -= endTime
         # print("script=",data);
@@ -95,7 +95,7 @@ def lambda_handler(event, context):
 
         inputs = ""
         streamCount = 1
-        for file in data['files']:
+        for file in data['files']: 
             # generate a single wavefile with a delay at the front of it.
             inputFile = webmURLDict[file["filename"]]
             fileName = str(interviewId) + "_p" + str(streamCount) + ".wav"
@@ -114,20 +114,20 @@ def lambda_handler(event, context):
             cmd = "ffmpeg -y -loglevel warning -acodec libopus -i " + inputFile + " -af adelay=" + str(file["startTimeOffset"]) + " " + outputFile
             print("cmd: ", cmd)
             p = subprocess.call(cmd, shell=True)
-
+            
             print("outputFile: ", outputFile)
             s3_client.upload_file(outputFile, bucket, 'Processed/' + interviewId + "/" + fileName)
-
+            
             # delete the individual stream from tmp after upload
             if os.path.exists(outputFile):
                 os.remove(outputFile)
-                print(interviewId, "Removed the file %s" % outputFile)
+                print(interviewId, "Removed the file %s" % outputFile) 
             inputs += " -itsoffset " + str(file["startTimeOffset"]) + " -acodec libopus -i " + inputFile
             streamCount = streamCount + 1
 
         mixedFileName = "/mixed-" + interview + ".wav"
         cmd = "ffmpeg -y -loglevel warning" + inputs + " -filter_complex amix=inputs=" + str(len(data["files"])) + ":duration=longest:dropout_transition=3 " + temp_dir + mixedFileName
-        p = subprocess.call(cmd, shell=True)
+        p = subprocess.call(cmd, shell=True)  
 
         #check to see if it's already a multi part audio recording
         key = 'Processed/' + interviewId + "/" + interviewId + "_1.wav"
@@ -135,20 +135,20 @@ def lambda_handler(event, context):
         print("Uploaded to:")
         if len(objs) > 0 and objs[0].key == key:
             count = 3
-            #check for interviewid_count.wav to make sure we're not overwriting. When we're not, upload.
+            #check for interviewid_count.wav to make sure we're not overwriting. When we're not, upload. 
             while(True):
-                # check the bucket for the _count file
+                # check the bucket for the _count file 
                 key = 'Processed/' + interviewId + "/" + interviewId + "_" + str(count) + ".wav"
                 objs = list(my_bucket.objects.filter(Prefix=key))
                 if len(objs) > 0 and objs[0].key == key:
                     #if the key exists, increase the count
                     print(key, " exists. skipping count")
                 else:
-                    #if it doesn't, upload the file with that key.
+                    #if it doesn't, upload the file with that key. 
                     s3_client.upload_file(temp_dir + mixedFileName, bucket, 'Processed/' + interviewId + "/" + interviewId + "_" + str(count) + ".wav")
                     print(bucket, 'Processed/' + interviewId + "/" + interviewId + "_" + str(count) + ".wav")
                     break
-                count = count + 1
+                count = count + 1 
         else:
             #if there isn't  a _1, see if there's a .wav
             key = 'Processed/' + interviewId + "/" + interviewId + ".wav"
@@ -170,9 +170,9 @@ def lambda_handler(event, context):
         # delete the tmp folder
         if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
-                print(interviewId, "Removed the folder %s" % temp_dir)
+                print(interviewId, "Removed the folder %s" % temp_dir) 
 
-
+        
         #delete the non zip files
         objs = my_bucket.objects.filter(Prefix=unzippedLocation)
         for obj in objs:

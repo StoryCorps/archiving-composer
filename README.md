@@ -37,6 +37,6 @@ This is the case pretty rarely, but needs to happen when the lambda script has a
 Local code in the local branch. 
 
 # Setup
-Requrements: 
-- boto3
-- 
+
+
+install requirements with `pip install -r requirements.txt`

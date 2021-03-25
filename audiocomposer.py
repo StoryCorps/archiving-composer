@@ -22,7 +22,6 @@ import requests
 import zipfile
 
 
-
 counter = Value('i', 0)
 
 app = Flask(__name__)
@@ -131,13 +130,13 @@ def lambda_handler():
                 print(interviewId, "found empty file - excluding from processing")
             elif("Paul Adams" in data['files'][count]["connectionData"]):
                 del data['files'][count]
-                print(interviewId, "found facil track - excluding from processing")
+                print(interviewId, "found facil track 1 - excluding from processing")
             elif("Diana Williams" in data['files'][count]["connectionData"]):
                 del data['files'][count]
-                print(interviewId, "found facil track - excluding from processing")
-            elif("Anonymous User7" in data['files'][count]["connectionData"]):
-                del data['files'][count]
-                print(interviewId, "found facil track - excluding from processing")
+                print(interviewId, "found facil track 2 - excluding from processing")
+            # elif("Anonymous User7" in data['files'][count]["connectionData"]):
+            #     del data['files'][count]
+            #     print(interviewId, "found facil track 3- excluding from processing")
             else:
                 count = count + 1
         # find start end end time for the whole playback
@@ -172,8 +171,8 @@ def lambda_handler():
                 objs = list(my_bucket.objects.filter(Prefix=key))
 
 
-            cmd = "ffmpeg -y -loglevel warning -acodec libopus -i " + inputFile + " -af adelay=" + str(file["startTimeOffset"]) + " " + outputFile
-            # print("cmd: ", cmd)
+            cmd = 'ffmpeg -y -loglevel warning -acodec libopus -i ' + inputFile + ' -af aresample=async=1,adelay=' + str(file['startTimeOffset']) + ' ' + outputFile
+
             p = subprocess.call(cmd, shell=True)
             
             print(interviewId, "outputFile: ", outputFile)
@@ -184,7 +183,7 @@ def lambda_handler():
             if os.path.exists(outputFile):
                 os.remove(outputFile)
                 print(interviewId, "Removed the file %s" % outputFile) 
-            # inputs += " -itsoffset " + str(file["startTimeOffset"]) + " -acodec libopus -i " + inputFile
+            inputs += " -itsoffset " + str(file["startTimeOffset"]) + " -acodec libopus -i " +    inputFile
             streamCount = streamCount + 1
 
         

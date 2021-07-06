@@ -20,6 +20,7 @@ import pprint
 import csv
 import requests
 import zipfile
+import shlex
 
 
 counter = Value('i', 0)
@@ -51,7 +52,7 @@ def lambda_handler():
     bucket = "storycorps-signature-remote"
     account = str(body["partnerId"])
     interview = str(body["id"])
-    interviewId = str(re.split('::',body["name"])[0]).lower()
+    interviewId = str(re.split('::',body["name"])[0]).lower().replace(" ", "")
     status = body["status"]
     http = urllib3.PoolManager()
     jsonData = {}
@@ -180,19 +181,17 @@ def lambda_handler():
             s3_client.upload_file(outputFile, bucket, 'Processed/' + interviewId + "/" + fileName)
             
             # delete the individual stream from tmp after upload
-            if os.path.exists(outputFile):
-                os.remove(outputFile)
-                print(interviewId, "Removed the file %s" % outputFile) 
-            inputs += " -itsoffset " + str(file["startTimeOffset"]) + " -acodec libopus -i " +    inputFile
+            os.remove(outputFile)
+            print(interviewId, "Removed the file %s" % outputFile) 
             streamCount = streamCount + 1
-
         
         for stream in individualStreams:
             key = 'Processed/' + interviewId + '/' + stream
-            inputs = inputs + " -i \"" + s3_client.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': key}, ExpiresIn=1000000) + "\" "
+            inputs = inputs + " -i \"" + s3_client.generate_presigned_url('get_object', Params={'Bucket': bucket, 'Key': key}, ExpiresIn=1000000) + "\"  "
         mixedFileName = "/mixed-" + interview + ".wav"
         cmd = "ffmpeg -y -loglevel warning" + inputs + " -filter_complex amix=inputs=" + str(len(data["files"])) + ":duration=longest:dropout_transition=3 " + temp_dir + mixedFileName
         p = subprocess.call(cmd, shell=True)  
+
 
         #check to see if it's already a multi part audio recording
         key = 'Processed/' + interviewId + "/" + interviewId + "_1.wav"
@@ -211,6 +210,7 @@ def lambda_handler():
                 else:
                     #if it doesn't, upload the file with that key. 
                     s3_client.upload_file(temp_dir + mixedFileName, bucket, 'Processed/' + interviewId + "/" + interviewId + "_" + str(count) + ".wav")
+    
                     print(interviewId, bucket, 'Processed/' + interviewId + "/" + interviewId + "_" + str(count) + ".wav")
                     break
                 count = count + 1 
@@ -234,9 +234,9 @@ def lambda_handler():
         
 
         # delete the tmp folder
-        if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
-                print(interviewId, "Removed the folder %s" % temp_dir) 
+        shutil.rmtree(temp_dir)
+        print(interviewId, "Removed the folder %s" % temp_dir) 
+
 
         #delete the non zip files
         objs = my_bucket.objects.filter(Prefix=unzippedLocation)
@@ -244,6 +244,7 @@ def lambda_handler():
             if(obj._key[-4:] != ".zip"):
                 deletedObj = s3_client.delete_object(Bucket=bucket, Key=obj._key)
                 print(interviewId, "deleted", bucket, obj._key)
+
         with counter.get_lock():
             counter.value -= 1
             out = counter.value    
@@ -254,7 +255,6 @@ def lambda_handler():
         #                 body = json.dumps(jsonData),
         #                 headers = {'Content-Type': 'application/json'},
         #                 retries = False)
-
         
         # print(interviewId, "done, webhook sent")
         resp = jsonify(success=True)

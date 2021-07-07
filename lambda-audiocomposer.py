@@ -1,9 +1,6 @@
 from __future__ import print_function
-from flask import Flask, request, jsonify
-from multiprocessing import Value
 
 import urllib
-import urllib3
 import zipfile
 import boto3
 import io
@@ -11,48 +8,25 @@ import os
 import json
 import subprocess
 import re
-import time
 import shutil
-from datetime import datetime
-from dateutil.parser import parse
-import sys
-import pprint
-import csv
-import requests
-import zipfile
-import shlex
+import urllib3
+
+# event = ""   #for local testing
+# context = "" #for local testing
 
 
-counter = Value('i', 0)
-
-app = Flask(__name__)
-
-@app.route("/")
-def hello():
-    while counter.value != 0:
-        print("sleeping")
-        time.sleep(5)
-    with counter.get_lock():
-        counter.value += 1
-        out = counter.value
-    print("processing", out)
-    time.sleep(60)
-    with counter.get_lock():
-        counter.value -= 1
-        out = counter.value
-        print("after", out)
-        return jsonify(count=out)  
-  
-@app.route('/convert-audio', methods=['POST'])
-def lambda_handler():
-    tmp = './tmp/'
-    #event = json.load(open('event.json')) #for testing local
-    #tmp = './tmp/' # for local testing
-    body = request.get_json(force=True)
+def lambda_handler(event, context):
+    tmp = '/tmp/'
+    # event = json.load(open('event.json')) #for testing local
+    # tmp = './tmp/' # for local testing
+    body = json.loads(event["body"])
+    print("event:", event)
+    print("body:", body)
+    
     bucket = "storycorps-signature-remote"
     account = str(body["partnerId"])
     interview = str(body["id"])
-    interviewId = str(re.split('::',body["name"])[0]).lower().replace(" ", "")
+    interviewId = str(re.split('::',body["name"])[0])
     status = body["status"]
     http = urllib3.PoolManager()
     jsonData = {}
@@ -62,9 +36,7 @@ def lambda_handler():
     
     if (status != "uploaded"):
         print(interviewId, "not an upload event.", status )
-        resp = jsonify(success=True)
-        resp.status_code = 200
-        return resp
+        return (interviewId, "not not an upload event", status)
 
     s3_client = boto3.client('s3')
     s3_resource = boto3.resource('s3')
@@ -74,17 +46,10 @@ def lambda_handler():
     unzippedLocation = account + "/" + interview
     temp_dir = tmp + interview
     interviewId = interviewId.lower()
-
+    
     webmURLDict = {}
-    # os.chdir("/home/ubuntu/flaskapp/")
-    # print(os.getcwd(), "path")
-    while counter.value != 0:
-        print(interviewId, "sleeping")
-        time.sleep(60)
+    
     try:
-        with counter.get_lock():
-            counter.value += 1
-            out = counter.value
         key = zippedKey
         print(interviewId, "unzipping", bucket, key)
         obj = s3_client.get_object(Bucket=bucket, Key=key)
@@ -222,7 +187,6 @@ def lambda_handler():
                 #upload the file like normal
                 s3_client.upload_file(temp_dir + mixedFileName, bucket, 'Processed/' + interviewId + "/" + interviewId + ".wav")
                 print(interviewId, bucket, 'Processed/' + interviewId + "/" + interviewId + ".wav")
-        
 
         # delete the tmp folder
         shutil.rmtree(temp_dir)
@@ -235,33 +199,22 @@ def lambda_handler():
             if(obj._key[-4:] != ".zip"):
                 deletedObj = s3_client.delete_object(Bucket=bucket, Key=obj._key)
                 print(interviewId, "deleted", bucket, obj._key)
-
-        with counter.get_lock():
-            counter.value -= 1
-            out = counter.value    
-        
+                
         jsonData["Status"] = "Success"
-        # response = http.request('POST',
-        #                 'https://hooks.zapier.com/hooks/catch/4449005/ozvr036/',
-        #                 body = json.dumps(jsonData),
-        #                 headers = {'Content-Type': 'application/json'},
-        #                 retries = False)
+        response = http.request('POST',
+                        'https://hooks.zapier.com/hooks/catch/4449005/ozvr036/',
+                        body = json.dumps(jsonData),
+                        headers = {'Content-Type': 'application/json'},
+                        retries = False)
+
         
-        # print(interviewId, "done, webhook sent")
-        resp = jsonify(success=True)
+        print(interviewId, "done, webhook sent")
+        
+        resp = json.dumps(jsonData)
         resp.status_code = 200
         return resp
     except Exception as e:
-        jsonData["Status"] = "Failed"
-        jsonData["Fail Status"] = e
-        print(interviewId, e)
-        with counter.get_lock():
-            counter.value -= 1
-            out = counter.value
-        # raise e
-        resp = jsonify(success=False)
-        resp.status_code = 500
-        return resp
+        print(e)
+        raise e
 
-if __name__ == "__main__":
-  app.run()
+# lambda_handler(event, context) #for local testing

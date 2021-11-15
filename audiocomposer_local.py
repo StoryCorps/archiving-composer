@@ -33,9 +33,13 @@ def lambda_handler():
     parser.add_argument('--body', help='The JSON body to parse.')
     args = parser.parse_args()
 
+    # exit if there's no args.body provided
+    if not args.body:
+        print('No JSON provided.')
+        return
+
     body = json.loads(args.body)
 
-    print(body['partnerId'])
     bucket = "storycorps-signature-remote"
     account = str(body["partnerId"])
     interview = str(body["id"])

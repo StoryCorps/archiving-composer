@@ -13,7 +13,7 @@ FROM base AS python-deps
 
 # Install pipenv and compilation dependencies
 RUN pip install pipenv
-RUN apt-get update && apt-get install -y --no-install-recommends gcc
+# RUN apt-get update && apt-get install -y --no-install-recommends gcc
 
 # Install python dependencies in /.venv
 COPY Pipfile .
@@ -30,10 +30,12 @@ ENV PATH="/.venv/bin:$PATH"
 # Create and switch to a new user
 RUN useradd --create-home appuser
 WORKDIR /home/appuser
-USER appuser
 
 # Install application into container
 COPY . .
+# RUN sudo chown -R appuser:appuser /home/appuser
+USER appuser
 
 # Run the application
-ENTRYPOINT ["python", "audiocomposer_local.py"]
+# ENTRYPOINT ["python", "audiocomposer_local.py"]
+ENTRYPOINT ["bash"]

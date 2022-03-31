@@ -1,41 +1,18 @@
-# following this model https://sourcery.ai/blog/python-docker/
+FROM python:3.8
 
-FROM python:3.7-slim as base
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg
 
-# Setup env
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONFAULTHANDLER 1
-
-
-FROM base AS python-deps
-
-# Install pipenv and compilation dependencies
 RUN pip install pipenv
-# RUN apt-get update && apt-get install -y --no-install-recommends gcc
 
-# Install python dependencies in /.venv
-COPY Pipfile .
-COPY Pipfile.lock .
-RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
+ENV PROJECT_DIR /usr/local/src/webapp
 
+WORKDIR ${PROJECT_DIR}
 
-FROM base AS runtime
+COPY Pipfile Pipfile.lock ${PROJECT_DIR}/
 
-# Copy virtual env from python-deps stage
-COPY --from=python-deps /.venv /.venv
-ENV PATH="/.venv/bin:$PATH"
+COPY . ${PROJECT_DIR}/
 
-# Create and switch to a new user
-RUN useradd --create-home appuser
-WORKDIR /home/appuser
+RUN pipenv install --system --deploy
 
-# Install application into container
-COPY . .
-# RUN sudo chown -R appuser:appuser /home/appuser
-USER appuser
-
-# Run the application
-# ENTRYPOINT ["python", "audiocomposer_local.py"]
-ENTRYPOINT ["bash"]
+# CMD [ "bash" ]
+ENTRYPOINT ["python", "audiocomposer-local.py", "--body=$BODY",]

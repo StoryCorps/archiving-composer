@@ -21,34 +21,25 @@ import csv
 import requests
 import zipfile
 import shlex
-
+import argparse
+import json
 
 counter = Value('i', 0)
-
-app = Flask(__name__)
-
-@app.route("/")
-def hello():
-    while counter.value != 0:
-        print("sleeping")
-        time.sleep(5)
-    with counter.get_lock():
-        counter.value += 1
-        out = counter.value
-    print("processing", out)
-    time.sleep(60)
-    with counter.get_lock():
-        counter.value -= 1
-        out = counter.value
-        print("after", out)
-        return jsonify(count=out)  
   
-@app.route('/convert-audio', methods=['POST'])
 def lambda_handler():
     tmp = './tmp/'
-    #event = json.load(open('event.json')) #for testing local
-    #tmp = './tmp/' # for local testing
-    body = request.get_json(force=True)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--body', help='The JSON body to parse.')
+    args = parser.parse_args()
+
+    # exit if there's no args.body provided
+    if not args.body:
+        print('No JSON provided.')
+        return
+
+    body = json.loads(args.body)
+
     bucket = "storycorps-signature-remote"
     account = str(body["partnerId"])
     interview = str(body["id"])
@@ -239,29 +230,25 @@ def lambda_handler():
         with counter.get_lock():
             counter.value -= 1
             out = counter.value    
+
+        return "yay"
+
+        # jsonData["Status"] = "Success"
+        # # response = http.request('POST',
+        # #                 'https://hooks.zapier.com/hooks/catch/4449005/ozvr036/',
+        # #                 body = json.dumps(jsonData),
+        # #                 headers = {'Content-Type': 'application/json'},
+        # #                 retries = False)
         
-        jsonData["Status"] = "Success"
-        # response = http.request('POST',
-        #                 'https://hooks.zapier.com/hooks/catch/4449005/ozvr036/',
-        #                 body = json.dumps(jsonData),
-        #                 headers = {'Content-Type': 'application/json'},
-        #                 retries = False)
-        
-        # print(interviewId, "done, webhook sent")
-        resp = jsonify(success=True)
-        resp.status_code = 200
-        return resp
+        # # print(interviewId, "done, webhook sent")
+        # resp = jsonify(success=True)
+        # resp.status_code = 200
+        # return resp
     except Exception as e:
         jsonData["Status"] = "Failed"
         jsonData["Fail Status"] = e
         print(interviewId, e)
-        with counter.get_lock():
-            counter.value -= 1
-            out = counter.value
-        # raise e
-        resp = jsonify(success=False)
-        resp.status_code = 500
-        return resp
+
 
 if __name__ == "__main__":
-  app.run()
+  lambda_handler()

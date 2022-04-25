@@ -1,5 +1,4 @@
 from __future__ import print_function
-from flask import Flask, request, jsonify
 from multiprocessing import Value
 
 import urllib
@@ -67,8 +66,6 @@ def lambda_handler():
     interviewId = interviewId.lower()
 
     webmURLDict = {}
-    # os.chdir("/home/ubuntu/flaskapp/")
-    # print(os.getcwd(), "path")
     while counter.value != 0:
         print(interviewId, "sleeping")
         time.sleep(60)
@@ -233,17 +230,6 @@ def lambda_handler():
 
         return "yay"
 
-        # jsonData["Status"] = "Success"
-        # # response = http.request('POST',
-        # #                 'https://hooks.zapier.com/hooks/catch/4449005/ozvr036/',
-        # #                 body = json.dumps(jsonData),
-        # #                 headers = {'Content-Type': 'application/json'},
-        # #                 retries = False)
-        
-        # # print(interviewId, "done, webhook sent")
-        # resp = jsonify(success=True)
-        # resp.status_code = 200
-        # return resp
     except Exception as e:
         jsonData["Status"] = "Failed"
         jsonData["Fail Status"] = e

@@ -22,11 +22,17 @@ import zipfile
 import shlex
 import argparse
 import json
-
-counter = Value('i', 0)
   
-def lambda_handler():
+
+def lambda_handler(event, context):
     tmp = './tmp/'
+
+    # dump the event and context to the log
+    print("Event:")
+    pprint.pprint(event)
+    print("Context:")
+    pprint.pprint(context)
+
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--body', help='The JSON body to parse.')
@@ -66,13 +72,8 @@ def lambda_handler():
     interviewId = interviewId.lower()
 
     webmURLDict = {}
-    while counter.value != 0:
-        print(interviewId, "sleeping")
-        time.sleep(60)
+
     try:
-        with counter.get_lock():
-            counter.value += 1
-            out = counter.value
         key = zippedKey
         print(interviewId, "unzipping", bucket, key)
         obj = s3_client.get_object(Bucket=bucket, Key=key)
@@ -224,10 +225,6 @@ def lambda_handler():
                 deletedObj = s3_client.delete_object(Bucket=bucket, Key=obj._key)
                 print(interviewId, "deleted", bucket, obj._key)
 
-        with counter.get_lock():
-            counter.value -= 1
-            out = counter.value    
-
         return "yay"
 
     except Exception as e:
@@ -237,4 +234,4 @@ def lambda_handler():
 
 
 if __name__ == "__main__":
-  lambda_handler()
+  lambda_handler(event, context)

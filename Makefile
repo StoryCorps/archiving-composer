@@ -6,10 +6,6 @@ run-now :
 	docker run -v ${HOME}/.aws/credentials:/root/.aws/credentials:ro -it archiving-composer:latest ${BODY}
 prune :
 	docker system prune -f
-push : ecr-tag
-	docker push 435400990198.dkr.ecr.us-west-2.amazonaws.com/archiving-composer:latest
-ecr-tag :
-	docker tag archiving-composer:latest 435400990198.dkr.ecr.us-west-2.amazonaws.com/archiving-composer:latest
 stop : 
 	docker stop archiving-composer
 rie :
@@ -18,6 +14,10 @@ rie :
 	--name archiving-composer \
     archiving-composer:latest \
         /usr/local/bin/python -m awslambdaric audiocomposer-local.lambda_handler
+push : ecr-tag
+	docker push 435400990198.dkr.ecr.us-west-2.amazonaws.com/archiving-composer:latest
+ecr-tag :
+	docker tag archiving-composer:latest 435400990198.dkr.ecr.us-west-2.amazonaws.com/archiving-composer:latest
 update-lambda : build push
 	aws lambda update-function-code \
 	--function-name archiving-composer \

@@ -22,28 +22,34 @@ import zipfile
 import shlex
 import argparse
 import json
-  
+
 
 def lambda_handler(event, context):
-    tmp = './tmp/'
+    tmp = '/tmp/'
 
-    # dump the event and context to the log
-    print("Event:")
-    pprint.pprint(event)
-    print("Context:")
-    pprint.pprint(context)
-
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--body', help='The JSON body to parse.')
-    args = parser.parse_args()
-
-    # exit if there's no args.body provided
-    if not args.body:
+    # exit if there's no event provided
+    if not event:
         print('No JSON provided.')
         return
 
-    body = json.loads(args.body)
+    # dump the event
+    # print('Event:')
+    # pprint.pprint()
+
+    # return True
+
+    # if event is a string, parse it from json
+    if 'body' in event and isinstance(event['body'], str):
+        body = json.loads(event['body'])
+    else:
+        body = event
+
+
+    # # Cover cases where the lambda is being called directly OR it's being called through the API Gateway
+    # if 'body' in event:
+    #     body = event['body']
+    # else:
+    #     body = event
 
     bucket = "storycorps-signature-remote"
     account = str(body["partnerId"])
@@ -62,8 +68,14 @@ def lambda_handler(event, context):
         resp.status_code = 200
         return resp
 
-    s3_client = boto3.client('s3')
-    s3_resource = boto3.resource('s3')
+    # load credentials json file
+    with open('credentials.json') as json_file:
+        data = json.load(json_file)
+        access_key = data["aws_access_key_id"]
+        secret_key = data["aws_secret_access_key"]
+    
+    s3_client = boto3.client('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
+    s3_resource = boto3.resource('s3', aws_access_key_id=access_key, aws_secret_access_key=secret_key)
     my_bucket = s3_resource.Bucket(bucket)
 
     zippedKey = account + "/" + interview + "/archive.zip"
@@ -225,7 +237,7 @@ def lambda_handler(event, context):
                 deletedObj = s3_client.delete_object(Bucket=bucket, Key=obj._key)
                 print(interviewId, "deleted", bucket, obj._key)
 
-        return "yay"
+        return "Re-Processed " + interviewId
 
     except Exception as e:
         jsonData["Status"] = "Failed"

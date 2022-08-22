@@ -22,8 +22,14 @@ The code for this process is all in `audiocomposer-local.py`. The other versions
 
 * Rename `credentials.json.sample` to `credentials.json` and enter your AWS credentials for testing.
 * To build the container locally, run `make build`
-* `make rie` will let you test locally using AWS's Runtime Interface Emulator ( see https://docs.aws.amazon.com/lambda/latest/dg/images-test.html )
+* `make rie` will let you test locally using AWS's Runtime Interface Emulator ( see https://docs.aws.amazon.com/lambda/latest/dg/images-test.html and example curl request below)
 * `make push` will build, tag and deploy the container to AWS's ECR registry and update the Lambda function with the latest.
 * If this command says that you are not authenticated, use `make authenticate-ecr`
+
+## Local dev curl request example ##
+```
+curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"id":"969c848c-ab7f-4422-9ca4-87c89679e17d","status":"uploaded","name":"prd000979::Jo::8/11/2022::6:06:10 PM","reason":"user initiated","sessionId":"2_MX40NjU2NTU1Mn5-MTY2MDA3MDk2MTA5M35Sb2sva3BHbUF5VkFxNTZUcEk2ejFxaXd-fg","applicationId":"46565552","createdAt":1660241171000,"size":50288301,"duration":295,"outputMode":"individual","streamMode":"auto","hasAudio":true,"hasVideo":true,"sha256sum":"FfqrOb5ohj6Vahst4ixBxsoCT1WRWkXVJaenwcjNXw0=","password":"","updatedAt":1660241500000,"multiArchiveTag":"","event":"archive","partnerId":46565552,"projectId":46565552,"url":null}'
+```
+
 
 Current package setup based on: https://pypi.org/project/awslambdaric/

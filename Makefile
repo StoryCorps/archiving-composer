@@ -8,7 +8,7 @@ prune :
 	docker system prune -f
 stop : 
 	docker stop archiving-composer
-rie :
+rie : build
 	docker run --rm -d -v ~/.aws-lambda-rie:/aws-lambda -p 9000:8080 \
     --entrypoint /aws-lambda/aws-lambda-rie \
 	--name archiving-composer \

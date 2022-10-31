@@ -8,7 +8,7 @@ verify_ssl = true
 [packages]
 boto3 = "*"
 requests = "*"
-Flask = "*"
+icecream = "*"
 
 [requires]
 python_version = "3.7"

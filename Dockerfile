@@ -14,10 +14,11 @@ RUN apt-get update && \
 
 # Install the function's dependencies
 RUN pip install \
-    --target /function \
-        awslambdaric \
-        boto3 \
-        requests  
+  --target /function \
+  awslambdaric \
+  boto3 \
+  requests \
+  icecream 
 
 #include the files
 RUN mkdir -p /function

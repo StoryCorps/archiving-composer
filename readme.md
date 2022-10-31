@@ -16,6 +16,9 @@ This had previously been run as a flask-based Lambda process. It is now being mo
 The Lambda function can be found on AWS here: https://us-west-2.console.aws.amazon.com/lambda/home?region=us-west-2#/functions/archiving-composer
 # Local Dev #
 
+There are different ways to work with the local code while doing testing. Option 1 (docker) is the closest to production so it's advisable to try this out at least once before deploying to production. Option 2 is a bit easier to work with but is not as close to production.
+
+## Option 1: Docker ##
 To work with the below, you'll need the AWS CLI, Python 3.8+ and possibly a few other things I'm forgetting.
 
 The code for this process is all in `audiocomposer-local.py`. The other versions are present for historical reference.
@@ -23,13 +26,21 @@ The code for this process is all in `audiocomposer-local.py`. The other versions
 * Rename `credentials.json.sample` to `credentials.json` and enter your AWS credentials for testing.
 * To build the container locally, run `make build`
 * `make rie` will let you test locally using AWS's Runtime Interface Emulator ( see https://docs.aws.amazon.com/lambda/latest/dg/images-test.html and example curl request below)
-* `make push` will build, tag and deploy the container to AWS's ECR registry and update the Lambda function with the latest.
-* If this command says that you are not authenticated, use `make authenticate-ecr`
 
-## Local dev curl request example ##
+### Local dev curl request example ###
 ```
 curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" -d '{"id":"969c848c-ab7f-4422-9ca4-87c89679e17d","status":"uploaded","name":"prd000979::Jo::8/11/2022::6:06:10 PM","reason":"user initiated","sessionId":"2_MX40NjU2NTU1Mn5-MTY2MDA3MDk2MTA5M35Sb2sva3BHbUF5VkFxNTZUcEk2ejFxaXd-fg","applicationId":"46565552","createdAt":1660241171000,"size":50288301,"duration":295,"outputMode":"individual","streamMode":"auto","hasAudio":true,"hasVideo":true,"sha256sum":"FfqrOb5ohj6Vahst4ixBxsoCT1WRWkXVJaenwcjNXw0=","password":"","updatedAt":1660241500000,"multiArchiveTag":"","event":"archive","partnerId":46565552,"projectId":46565552,"url":null}'
 ```
 
-
 Current package setup based on: https://pypi.org/project/awslambdaric/
+
+## Option 2: Local Python ##
+* Rename `credentials.json.sample` to `credentials.json` and enter your AWS credentials for testing.
+* `pip install -r requirements.txt`
+* `pipenv run python audiocomposer-local.py --event='[THE JSON EVENT FROM VONAGE]'`
+
+# Deploying #
+
+* `make update-lambda` will build, tag and deploy the container to AWS's ECR registry and update the Lambda function with the latest.
+* If this command says that you are not authenticated, use `make authenticate-ecr`
+a

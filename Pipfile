@@ -9,6 +9,7 @@ verify_ssl = true
 boto3 = "*"
 requests = "*"
 icecream = "*"
+sentry-sdk = "*"
 
 [requires]
 python_version = "3.7"

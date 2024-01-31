@@ -24,6 +24,21 @@ import argparse
 import json
 from icecream import ic
 
+# add sentry
+import sentry_sdk
+from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
+
+sentry_sdk.init(
+    dsn="https://02c59fc0622254ae590c302fe4ca7f36@o1088143.ingest.sentry.io/4506667625349120",
+    integrations=[AwsLambdaIntegration()],
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+)
 
 def lambda_handler(event, context):
     tmp = '/tmp/'
@@ -58,7 +73,7 @@ def lambda_handler(event, context):
 
     if (status != "uploaded"):
         ic(interviewId, "not an upload event.", status)
-        resp = jsonify(success=True)
+        resp = json.dumps(success=True)
         resp.status_code = 200
         return resp
 

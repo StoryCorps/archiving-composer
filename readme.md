@@ -30,6 +30,7 @@ The code for this process is all in `audiocomposer-local.py`. The other versions
 * Rename `credentials.json.sample` to `credentials.json` and enter your AWS credentials for testing.
 * To build the container locally, run `make build`
 * `make rie` will let you test locally using AWS's Runtime Interface Emulator ( see <https://docs.aws.amazon.com/lambda/latest/dg/images-test.html> and example curl request below)
+* In order to use RIE, you'll need to confirm that the RIE server is installed on your local machine. [installation instructions](https://github.com/aws/aws-lambda-python-runtime-interface-client/tree/main#local-testing).
 
 #### Local dev curl request example ####
 
@@ -42,7 +43,7 @@ Current package setup based on: <https://pypi.org/project/awslambdaric/>
 ### Option 2: Local Python ###
 
 * Rename `credentials.json.sample` to `credentials.json` and enter your AWS credentials for testing.
-* `pip install -r requirements.txt`
+* `pipenv install` to install the dependencies
 * `pipenv run python audiocomposer-local.py --event='[THE JSON EVENT FROM VONAGE]'`
 
 ## Deploying ##

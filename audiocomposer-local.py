@@ -30,6 +30,7 @@ sentry_sdk.init(
     profiles_sample_rate=1.0,
 )
 
+
 def lambda_handler(event, context):
     tmp = '/tmp/'
 
@@ -63,9 +64,9 @@ def lambda_handler(event, context):
     jsonData["Archive ID"] = interview
 
     if (status != "uploaded"):
-        ic( "not an upload event.", status)
-        resp = {"success": False, "message": "not an upload event."}
-        resp.status_code = 200
+        ic("not an upload event.", status)
+        resp = {"success": False,
+                "message": "not an upload event.", "status_code": 200}
         return resp
 
     # load credentials json file

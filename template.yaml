@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Application model for the StoryCorps Virtual Archiving Composer,
+Resources:
+  archivingcomposerV3:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Description: This is the script used by StoryCorps Virtual (2). It will process raw webm files from OpenTok into individual .wav and mixed .wavs. It replaces "signature-remote-process-files".
+      MemorySize: 5000
+      Timeout: 270
+      Architectures:
+        - arm64
+      EphemeralStorage:
+        Size: 1000
+      EventInvokeConfig:
+        DestinationConfig: {}
+        MaximumEventAgeInSeconds: 21600
+        MaximumRetryAttempts: 0
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          MaxAge: 0
+      ImageUri: 435400990198.dkr.ecr.us-west-2.amazonaws.com/archiving-composer:latest
+      PackageType: Image
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+              Resource: arn:aws:logs:us-west-2:435400990198:*
+            - Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource:
+                - arn:aws:logs:us-west-2:435400990198:log-group:/aws/lambda/archiving-composer:*
+            - Effect: Allow
+              Action:
+                - xray:PutTraceSegments
+                - xray:PutTelemetryRecords
+              Resource:
+                - "*"
+      ReservedConcurrentExecutions: 1
+      SnapStart:
+        ApplyOn: None
+      Tracing: Active
+      Events:
+        SQS1:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ArchivingComposerQueue.Arn
+            BatchSize: 1
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub
+        - ${ResourceName} From Stack ${AWS::StackName}
+        - ResourceName: Api
+      StageName: Prod
+      DefinitionBody:
+        openapi: "3.0"
+        info: {}
+        paths:
+          /:
+            post:
+              x-amazon-apigateway-integration:
+                credentials: !GetAtt ApiArchivingComposerQueuesendmessageRole.Arn
+                httpMethod: POST
+                type: aws
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/${ArchivingComposerQueue.QueueName}
+                requestParameters:
+                  integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+                requestTemplates:
+                  application/json: Action=SendMessage&MessageBody={"data":$input.body}
+                responses:
+                  default:
+                    statusCode: 200
+              responses:
+                "200":
+                  description: 200 response
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+  ArchivingComposerQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ArchivingComposerSQS
+      SqsManagedSseEnabled: true
+      MessageRetentionPeriod: 345600
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt ArchivingComposerDLQ.Arn
+        maxReceiveCount: 5
+  ApiArchivingComposerQueuesendmessageRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+        Version: "2012-10-17"
+      Path: /
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action: sqs:SendMessage
+                Effect: Allow
+                Resource: !GetAtt ArchivingComposerQueue.Arn
+            Version: "2012-10-17"
+          PolicyName: ApiArchivingComposerSQSsendmessagePolicy
+  ArchivingComposerDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      MessageRetentionPeriod: 345600

@@ -1,5 +1,5 @@
 build :
-	docker build . -t archiving-composer:latest
+	docker buildx build . -t archiving-composer:latest
 run :
 	docker run -d archiving-composer:latest 
 run-now :

@@ -18,7 +18,8 @@ RUN pip install \
   awslambdaric \
   boto3 \
   requests \
-  icecream 
+  icecream \
+  sentry_sdk
 
 #include the files
 RUN mkdir -p /function
@@ -38,10 +39,11 @@ WORKDIR /function
 COPY --from=build-image /function /function
 
 # include built ffmpeg
-COPY --from=mwader/static-ffmpeg:5.0-1 /ffmpeg /usr/local/bin/
-COPY --from=mwader/static-ffmpeg:5.0-1 /ffprobe /usr/local/bin/
+COPY --from=mwader/static-ffmpeg:6.1.1 /ffmpeg /usr/local/bin/
+COPY --from=mwader/static-ffmpeg:6.1.1 /ffprobe /usr/local/bin/
 
 RUN chmod 755 credentials.json
+ENV AWS_LAMBDA_FUNCTION_TIMEOUT=900
 
 ENTRYPOINT [ "/usr/local/bin/python", "-m", "awslambdaric" ]
 CMD [ "audiocomposer-local.lambda_handler" ]

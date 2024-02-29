@@ -17,6 +17,11 @@ This had previously been run as a flask-based Lambda process. It is now being mo
 
 The Lambda function can be found on AWS here: <https://us-west-2.console.aws.amazon.com/lambda/home?region=us-west-2#/functions/archiving-composer>
 
+## A note on python dependencies ##
+Currently any python you need will also need to be specified in the Dockerfile. This is not ideal and will be addressed in the future.
+
+For local development work, we use pipenv to manage dependencies.
+
 ## Local Dev ##
 
 There are different ways to work with the local code while doing testing. Option 1 (docker) is the closest to production so it's advisable to try this out at least once before deploying to production. Option 2 is a bit easier to work with but is not as close to production.

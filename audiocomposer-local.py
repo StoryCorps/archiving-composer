@@ -1,7 +1,5 @@
 from __future__ import print_function
-from multiprocessing import Value
 
-import urllib
 import urllib3
 import zipfile
 import boto3
@@ -10,16 +8,8 @@ import os
 import json
 import subprocess
 import re
-import time
 import shutil
-from datetime import datetime
-from dateutil.parser import parse
-import sys
-import pprint
-import csv
-import requests
 import zipfile
-import shlex
 import argparse
 import json
 from icecream import ic
@@ -64,6 +54,7 @@ def lambda_handler(event, context):
     account = str(body["partnerId"])
     interview = str(body["id"])
     interviewId = str(re.split('::', body["name"])[0]).lower().replace(" ", "")
+    ic.configureOutput(prefix='{} :: '.format(interviewId))
     status = body["status"]
     http = urllib3.PoolManager()
     jsonData = {}
@@ -72,8 +63,8 @@ def lambda_handler(event, context):
     jsonData["Archive ID"] = interview
 
     if (status != "uploaded"):
-        ic(interviewId, "not an upload event.", status)
-        resp = json.dumps(success=True)
+        ic( "not an upload event.", status)
+        resp = {"success": False, "message": "not an upload event."}
         resp.status_code = 200
         return resp
 
@@ -166,7 +157,6 @@ def lambda_handler(event, context):
         print(interviewId, "processing individual streams")
 
         for file in data['files']:
-            ic(file["connectionData"])
             try:
                 # generate a single wavefile with a delay at the front of it.
                 inputFile = webmURLDict[file["filename"]]
@@ -190,20 +180,20 @@ def lambda_handler(event, context):
 
                 p = subprocess.call(cmd, shell=True)
 
-                ic(interviewId, "outputFile: ", outputFile)
+                ic("outputFile: ", outputFile)
                 individualStreams.append(fileName)
                 s3_client.upload_file(
                     outputFile, bucket, 'Processed/' + interviewId + "/" + fileName)
 
                 # delete the individual stream from tmp after upload
                 os.remove(outputFile)
-                ic(interviewId, "Removed the file %s" % outputFile)
+                ic("Removed the file %s" % outputFile)
                 streamCount = streamCount + 1
             except Exception as e:
-                ic(interviewId, "Error processing stream", e)
+                ic("Error processing stream", e)
                 pass
 
-        ic(interviewId, "Done processing individual streams")
+        ic("Done processing individual streams")
         for stream in individualStreams:
             key = 'Processed/' + interviewId + '/' + stream
             inputs = inputs + " -i \"" + s3_client.generate_presigned_url(
@@ -213,14 +203,14 @@ def lambda_handler(event, context):
             str(len(data["files"])) + \
             ":duration=longest:dropout_transition=3 " + temp_dir + mixedFileName
 
-        ic(interviewId, "mixing streams", cmd)
+        ic("mixing streams")
 
         p = subprocess.call(cmd, shell=True)
 
         # check to see if it's already a multi part audio recording
         key = 'Processed/' + interviewId + "/" + interviewId + "_1.wav"
         objs = list(my_bucket.objects.filter(Prefix=key))
-        ic(interviewId, "processing mix file. Uploaded to:")
+        ic("processing mix file. Uploaded to:{}".format(key))
         if len(objs) > 0 and objs[0].key == key:
             count = 3
             # check for interviewid_count.wav to make sure we're not overwriting. When we're not, upload.
@@ -231,13 +221,13 @@ def lambda_handler(event, context):
                 objs = list(my_bucket.objects.filter(Prefix=key))
                 if len(objs) > 0 and objs[0].key == key:
                     # if the key exists, increase the count
-                    ic(interviewId, key, " exists. skipping count")
+                    ic(key, " exists. skipping count")
                 else:
                     # if it doesn't, upload the file with that key.
                     s3_client.upload_file(temp_dir + mixedFileName, bucket, 'Processed/' +
                                           interviewId + "/" + interviewId + "_" + str(count) + ".wav")
 
-                    ic(interviewId, bucket, 'Processed/' + interviewId +
+                    ic(bucket, 'Processed/' + interviewId +
                        "/" + interviewId + "_" + str(count) + ".wav")
                     break
                 count = count + 1
@@ -254,19 +244,14 @@ def lambda_handler(event, context):
                 s3_resource.Object(bucket, old_key).delete()
                 s3_client.upload_file(temp_dir + mixedFileName, bucket,
                                       'Processed/' + interviewId + "/" + interviewId + "_2.wav")
-                ic(interviewId, bucket, 'Processed/' +
-                   interviewId + "/" + interviewId + "_2.wav")
-                ic(interviewId, "renamed ", old_key, " to ", new_key)
+
             else:
                 # upload the file like normal
                 s3_client.upload_file(temp_dir + mixedFileName, bucket,
                                       'Processed/' + interviewId + "/" + interviewId + ".wav")
-                ic(interviewId, bucket, 'Processed/' +
-                   interviewId + "/" + interviewId + ".wav")
-
         # delete the tmp folder
         shutil.rmtree(temp_dir)
-        ic(interviewId, "Removed the folder %s" % temp_dir)
+        ic("Removed the folder %s" % temp_dir)
 
         # delete the non zip files
         objs = my_bucket.objects.filter(Prefix=unzippedLocation)
@@ -274,14 +259,14 @@ def lambda_handler(event, context):
             if (obj._key[-4:] != ".zip"):
                 deletedObj = s3_client.delete_object(
                     Bucket=bucket, Key=obj._key)
-                ic(interviewId, "deleted", bucket, obj._key)
+                ic("deleted", bucket, obj._key)
 
         return "Re-Processed " + interviewId
 
     except Exception as e:
         jsonData["Status"] = "Failed"
         jsonData["Fail Status"] = e
-        ic(interviewId, e)
+        ic(e)
 
 
 if __name__ == "__main__":

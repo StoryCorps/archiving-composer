@@ -18,11 +18,14 @@ This had previously been run as a flask-based Lambda process. It is now being mo
 The Lambda function can be found on AWS here: <https://us-west-2.console.aws.amazon.com/lambda/home?region=us-west-2#/functions/archiving-composer>
 
 ## A note on python dependencies ##
+
 Currently any python you need will also need to be specified in the Dockerfile. This is not ideal and will be addressed in the future.
 
 For local development work, we use pipenv to manage dependencies.
 
 ## Local Dev ##
+
+*The content below is outdated as of 3/5/24. It will be updated soon.*
 
 There are different ways to work with the local code while doing testing. Option 1 (docker) is the closest to production so it's advisable to try this out at least once before deploying to production. Option 2 is a bit easier to work with but is not as close to production.
 
@@ -50,12 +53,11 @@ Current package setup based on: <https://pypi.org/project/awslambdaric/>
 * Rename `credentials.json.sample` to `credentials.json` and enter your AWS credentials for testing.
 * `pipenv install` to install the dependencies
 * `pipenv run python audiocomposer-local.py --event='[THE JSON EVENT FROM VONAGE]'`
+* You can also pass in a json file with the `--file` flag
 
 ## Deploying ##
 
-* `make update-lambda` will build, tag and deploy the container to AWS's ECR registry and update the Lambda function with the latest.
-* If this command says that you are not authenticated, use `make authenticate-ecr`
-a
+* `make deploy` will build, tag and deploy the container to AWS's ECR registry and update the Lambda function with the latest.
 
 ## Example vonage payload ##
 

@@ -4,6 +4,11 @@ Description: SAM Application model for the StoryCorps Virtual Archiving Composer
 Resources:
   archivingcomposerV3:
     Type: AWS::Serverless::Function
+    Metadata:
+      DockerContext: /Volumes/G-DRIVE/code/storycorps/archiving-composer
+      DockerTag: latest
+      Dockerfile: Dockerfile
+      SamResourceId: archivingcomposerV3
     Properties:
       CodeUri: .
       Description: This is the script used by StoryCorps Virtual (2). It will process
@@ -23,7 +28,13 @@ Resources:
         AuthType: NONE
         Cors:
           MaxAge: 0
-      ImageUri: 435400990198.dkr.ecr.us-west-2.amazonaws.com/archiving-composer:latest
+          AllowOrigins:
+          - '*'
+          AllowMethods:
+          - '*'
+          AllowHeaders:
+          - '*'
+      ImageUri: archivingcomposerv3:latest
       PackageType: Image
       Policies:
       - Statement:
@@ -91,14 +102,13 @@ Resources:
                   description: 200 response
       EndpointConfiguration: REGIONAL
       TracingEnabled: true
-      Cors:
-        MaxAge: 5
   ArchivingComposerQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: ArchivingComposerSQS
       SqsManagedSseEnabled: true
       MessageRetentionPeriod: 345600
+      VisibilityTimeout: 300
       RedrivePolicy:
         deadLetterTargetArn:
           Fn::GetAtt:
@@ -133,3 +143,15 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       MessageRetentionPeriod: 345600
+  ArchivingComposerECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: archiving-composer-v3
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: "{\n  \"rules\": [\n    {\n      \"rulePriority\": 1,\n\
+          \      \"description\": \"Keep last 100 images\",\n      \"selection\":\
+          \ {\n        \"tagStatus\": \"any\",\n        \"countType\": \"imageCountMoreThan\"\
+          ,\n        \"countNumber\": 100\n      },\n      \"action\": {\n       \
+          \ \"type\": \"expire\"\n      }\n    }\n  ]\n}\n"

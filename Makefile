@@ -29,8 +29,7 @@ authenticate-ecr :
 	aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin https://435400990198.dkr.ecr.us-west-2.amazonaws.com
 logs:
 	sam logs --stack-name archiving-composer-v3 --tail
-deploy :
-	sam build
-	sam deploy --resolve-image-repos
+deploy : build
+	sam deploy
 sync: 
 	sam sync --stack-name=archiving-composer-v3 --image-repository=435400990198.dkr.ecr.us-west-2.amazonaws.com/archivingcomposerv353d9c6bf/archivingcomposerv3a3aab478repo --watch

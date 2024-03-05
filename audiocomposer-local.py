@@ -41,7 +41,8 @@ def lambda_handler(event, context):
 
     # if we're receiving this from sqs, pop the first record and use that as the event
     if 'Records' in event:
-        event = json.loads(event['Records'][0]).data
+        print(event['Records'][0])
+        event = event['Records'][0]
 
     # if event is a string, parse it from json
     if 'body' in event and isinstance(event['body'], str):
@@ -54,7 +55,6 @@ def lambda_handler(event, context):
         account = str(body["partnerId"])
     except:
         ic("No partnerId in event")
-        ic(event)
         resp = {"success": False,
                 "message": "No partnerId in event", "status_code": 200}
         return resp

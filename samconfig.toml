@@ -6,4 +6,4 @@ s3_prefix = "archiving-composer-v3"
 region = "us-west-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-image_repositories = []
+image_repositories = ["archivingcomposerV3=435400990198.dkr.ecr.us-west-2.amazonaws.com/archivingcomposerv353d9c6bf/archivingcomposerv3a3aab478repo"]

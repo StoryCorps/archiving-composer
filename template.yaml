@@ -4,6 +4,10 @@ Description: SAM Application model for the StoryCorps Virtual Archiving Composer
 Resources:
   archivingcomposerV3:
     Type: AWS::Serverless::Function
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./
+      DockerTag: latest
     Properties:
       CodeUri: .
       Description: This is the script used by StoryCorps Virtual (2). It will process raw webm files from OpenTok into individual .wav and mixed .wavs. It replaces "signature-remote-process-files".
@@ -17,10 +21,17 @@ Resources:
         DestinationConfig: {}
         MaximumEventAgeInSeconds: 21600
         MaximumRetryAttempts: 0
+
       FunctionUrlConfig:
         AuthType: NONE
         Cors:
           MaxAge: 0
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - "*"
+          AllowHeaders:
+            - "*"
       ImageUri: 435400990198.dkr.ecr.us-west-2.amazonaws.com/archiving-composer:latest
       PackageType: Image
       Policies:
@@ -87,6 +98,7 @@ Resources:
       QueueName: ArchivingComposerSQS
       SqsManagedSseEnabled: true
       MessageRetentionPeriod: 345600
+      VisibilityTimeout: 300
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt ArchivingComposerDLQ.Arn
         maxReceiveCount: 5
@@ -115,3 +127,27 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       MessageRetentionPeriod: 345600
+  ArchivingComposerECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: archiving-composer-v3
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 100 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 100
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }

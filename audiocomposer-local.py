@@ -39,20 +39,26 @@ def lambda_handler(event, context):
         ic('No JSON provided.')
         return
 
+    # if we're receiving this from sqs, pop the first record and use that as the event
+    if 'Records' in event:
+        event = json.loads(event['Records'][0]).data
+
     # if event is a string, parse it from json
     if 'body' in event and isinstance(event['body'], str):
         body = json.loads(event['body'])
     else:
         body = event
 
-    # # Cover cases where the lambda is being called directly OR it's being called through the API Gateway
-    # if 'body' in event:
-    #     body = event['body']
-    # else:
-    #     body = event
-
     bucket = "storycorps-signature-remote"
-    account = str(body["partnerId"])
+    try:
+        account = str(body["partnerId"])
+    except:
+        ic("No partnerId in event")
+        ic(event)
+        resp = {"success": False,
+                "message": "No partnerId in event", "status_code": 200}
+        return resp
+
     interview = str(body["id"])
     interviewId = str(re.split('::', body["name"])[0]).lower().replace(" ", "")
     ic.configureOutput(prefix='{} :: '.format(interviewId))
@@ -276,10 +282,40 @@ if __name__ == "__main__":
 
     # is there an event param passed?
     parser.add_argument('--event', type=str, default="")
+    parser.add_argument('--file', type=str, default="")
     args = parser.parse_args()
+
+    event = {}
 
     if args.event != "":
         event = json.loads(args.event)
         context = ''
 
-    lambda_handler(event, context)
+    if args.file != "":
+        with open(args.file) as f:
+            event = json.load(f)
+            context = ''
+        pass
+
+    # if no event is passed, exit
+    if not event:
+        print('No event provided.')
+        exit()
+
+    # if we have just a single event, put it into SQS format
+    if 'Records' not in event:
+        event = {
+            "Records": [
+                {
+                    "body": json.dumps(event)
+                }
+            ]
+        }
+
+    # run the hanlder for each item in Records
+    for record in event['Records']:
+        body = json.loads(record["body"])
+        lambda_handler(body, context)
+        pass
+
+    # lambda_handler(event, context)

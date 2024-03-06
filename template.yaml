@@ -84,6 +84,7 @@ Resources:
                   integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
                 requestTemplates:
                   application/json: Action=SendMessage&MessageBody={"data":$input.body}
+                  text/plain: Action=SendMessage&MessageBody={"data":$input.body}
                 responses:
                   default:
                     statusCode: 200

@@ -39,6 +39,11 @@ def lambda_handler(event, context):
         ic('No JSON provided.')
         return
 
+    ic(event)
+
+    # NOTE: This top portion is neccessary to handle the different ways that the event can be passed to the lambda function.
+    # SQS for example will pass a list of records, while a direct invocation will pass the event directly.
+
     # if we're receiving this from sqs, pop the first record and use that as the event
     if 'Records' in event:
         print(event['Records'][0])
@@ -50,13 +55,18 @@ def lambda_handler(event, context):
     else:
         body = event
 
+    # and last but not least, if the body has a top-level "data" key, use that as the body
+    if 'data' in body:
+        body = body['data']
+
+    # set some key variables
     bucket = "storycorps-signature-remote"
     try:
         account = str(body["partnerId"])
     except:
-        ic("No partnerId in event")
+        ic("No partnerId in event", body)
         resp = {"success": False,
-                "message": "No partnerId in event", "status_code": 200}
+                "message": "No partnerId in event", "status_code": 200, "body": body}
         return resp
 
     interview = str(body["id"])

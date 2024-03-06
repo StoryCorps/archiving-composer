@@ -1,0 +1,16 @@
+{
+    "messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
+    "receiptHandle": "MessageReceiptHandle",
+    "body": "{\n                \"id\": \"905f60fc-ede3-47ee-8fdd-2f031134399f\",\n                \"status\": \"uploaded\",\n                \"name\": \"osv000320::Claire::2/6/2024::5:05:27 PM\",\n                \"reason\": \"user initiated\",\n                \"sessionId\": \"2_MX40NjU2NTU1Mn5-MTcwNzIzNDgxMDk5Nn5UaGExTWllUFpyYXZiTUlCWXF6R0NVNVV-fn4\",\n                \"applicationId\": \"46565552\",\n                \"createdAt\": 1707239128000,\n                \"size\": 29276005,\n                \"duration\": 314,\n                \"outputMode\": \"individual\",\n                \"streamMode\": \"auto\",\n                \"hasAudio\": true,\n                \"hasVideo\": true,\n                \"hasTranscription\": false,\n                \"sha256sum\": \"OUdYV7kJJdBSo2yUckjJxp320ucQ/Wwmtf82w55QL8g=\",\n                \"password\": \"\",\n                \"updatedAt\": 1707239449000,\n                \"multiArchiveTag\": \"\",\n                \"partnerId\": 46565552,\n                \"event\": \"archive\",\n                \"projectId\": 46565552,\n                \"url\": null\n            }",
+    "attributes": {
+        "ApproximateReceiveCount": "1",
+        "SentTimestamp": "1523232000000",
+        "SenderId": "123456789012",
+        "ApproximateFirstReceiveTimestamp": "1523232000001"
+    },
+    "messageAttributes": {},
+    "md5OfBody": "{{{md5_of_body}}}",
+    "eventSource": "aws:sqs",
+    "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:MyQueue",
+    "awsRegion": "us-east-1"
+}

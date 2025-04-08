@@ -177,19 +177,45 @@ def lambda_handler(event, context):
             try:
                 # generate a single wavefile with a delay at the front of it.
                 inputFile = webmURLDict[file["filename"]]
-                fileName = str(interviewId) + "_p" + str(streamCount) + ".wav"
+                
+                # Parse connectionData to get userName
+                user_name = None
+                if "connectionData" in file and file["connectionData"]:
+                    try:
+                        connection_data = json.loads(file["connectionData"])
+                        if "userName" in connection_data and connection_data["userName"]:
+                            # Get username and sanitize it
+                            raw_name = connection_data["userName"]
+                            # Sanitize: replace non-alphanumeric chars with underscore
+                            sanitized_name = re.sub(r'[^\w\-]', '_', raw_name)
+                            # Trim if too long (max 30 chars)
+                            sanitized_name = sanitized_name[:30]
+                            # Ensure it's not empty or just underscores
+                            if sanitized_name and not all(c == '_' for c in sanitized_name):
+                                user_name = sanitized_name
+                    except json.JSONDecodeError:
+                        ic("Error parsing connectionData JSON")
+                        
+                # Fallback to default if userName is None or invalid
+                if not user_name:
+                    user_name = "p" + str(streamCount)
+                
+                # Create filename with userName
+                fileName = str(interviewId) + "_" + user_name + ".wav"
                 outputFile = temp_dir + "/" + fileName
 
-                # look at the bucket and
+                # Check for uniqueness in S3 bucket
                 key = 'Processed/' + interviewId + "/" + fileName
                 objs = list(my_bucket.objects.filter(Prefix=key))
+                suffix_counter = 1
                 while len(objs) > 0 and objs[0].key == key:
-                    streamCount = streamCount + 1
-                    fileName = str(interviewId) + "_p" + \
-                        str(streamCount) + ".wav"
+                    # If file already exists, append counter to make unique
+                    unique_name = f"{user_name}_{suffix_counter}"
+                    fileName = str(interviewId) + "_" + unique_name + ".wav"
                     outputFile = temp_dir + "/" + fileName
                     key = 'Processed/' + interviewId + "/" + fileName
                     objs = list(my_bucket.objects.filter(Prefix=key))
+                    suffix_counter += 1
 
                 cmd = 'ffmpeg -y -loglevel warning -acodec libopus -i ' + inputFile + \
                     ' -af aresample=async=1,adelay=' + \

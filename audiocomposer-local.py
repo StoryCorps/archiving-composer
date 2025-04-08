@@ -69,7 +69,7 @@ def lambda_handler(event, context):
                 "message": "No partnerId in event", "status_code": 200, "body": body}
         return resp
 
-    interview = str(body["id"])
+    interview = str(body["id"]).lower()
     interviewId = str(re.split('::', body["name"])[0]).lower().replace(" ", "")
     ic.configureOutput(prefix='{} :: '.format(interviewId))
     status = body["status"]

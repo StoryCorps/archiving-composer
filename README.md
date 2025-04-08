@@ -92,3 +92,12 @@ Current package setup based on: <https://pypi.org/project/awslambdaric/>
   * id (archive id) tells the script where to find the .zip that contains the webms and json file;
   * status - non upload status is ignored;
   * name - this text is split on :: and the first segment is used to name the files.
+
+## Changelog
+
+### 2025-04-08: User-specific file naming
+- Added feature to use the participant userNames from connectionData for naming individual WAV files
+- Individual WAV files are now named as `{interviewId}_{userName}.wav` instead of `{interviewId}_p{number}.wav`
+- Ensures all interviewIds are consistently lowercase in filenames
+- Handles edge cases for duplicate names, invalid userNames, and special characters
+- Falls back to original p1, p2 naming scheme if userName is not available
